@@ -1,0 +1,45 @@
+{
+  "id": "/",
+  "short_name": "فرش بازار",
+  "name": "فرش بازار | سامانه جامع فرش اصیل ایرانی",
+  "description": "سامانه تخصصی خرید، ثبت سفارش نمونه، کارشناسی نصب و قیمت‌گذاری هوشمند فرش دستباف و ماشینی",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf9",
+  "theme_color": "#800000",
+  "dir": "rtl",
+  "lang": "fa-IR",
+  "prefer_related_applications": false,
+  "categories": ["shopping", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "form_factor": "wide font",
+      "label": "نمای کلی سامانه فرش بازار"
+    }
+  ]
+}

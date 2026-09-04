@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", "Tahoma", system-ui, sans-serif;
+  --color-lac: #8b1e1e; /* قرمز لاکی سنتی */
+  --color-rwnas: #b23b3b; /* قرمز روناس */
+  --color-creme: #fdfaf4; /* کرم استخوانی سنتی */
+  --color-bazaar: #2d221e; /* قهوه‌ای تیره بازاری */
+  --color-firoozeh: #20948b; /* فیروزه‌ای ایرانی */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-creme);
+    font-family: var(--font-sans);
+  }
+}
