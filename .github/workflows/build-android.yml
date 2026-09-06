@@ -35,49 +35,31 @@ jobs:
         with:
           gradle-version: '8.2'
 
-      - name: Create missing launcher resources
-        working-directory: android/app/src/main
-        run: |
-          mkdir -p res/drawable
-          mkdir -p res/mipmap-mdpi
-          mkdir -p res/mipmap-hdpi
-          mkdir -p res/mipmap-xhdpi
-          mkdir -p res/mipmap-xxhdpi
-          mkdir -p res/mipmap-xxxhdpi
+      
+        - name: Fix Android launcher resources
+          working-directory: android/app/src/main
+          run: |
+            mkdir -p res/drawable
 
-          cat > res/drawable/ic_launcher_fallback.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"
-              android:shape="rectangle">
-              <solid android:color="#8B5E3C"/>
-              <corners android:radius="16dp"/>
-          </shape>
-          EOF
+            cat > res/drawable/ic_launcher_fallback.xml <<'EOF'
+            <?xml version="1.0" encoding="utf-8"?>
+            <shape xmlns:android="http://schemas.android.com/apk/res/android"
+                android:shape="rectangle">
+                <solid android:color="#8B5E3C"/>
+                <corners android:radius="16dp"/>
+            </shape>
+            EOF
 
-          for dir in \
-            mipmap-mdpi \
-            mipmap-hdpi \
-            mipmap-xhdpi \
-            mipmap-xxhdpi \
-            mipmap-xxxhdpi
-          do
-            cat > "res/$dir/ic_launcher.xml" <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@drawable/ic_launcher_fallback"/>
-              <foreground android:drawable="@drawable/ic_launcher_fallback"/>
-          </adaptive-icon>
-          EOF
+            # Use a normal drawable for the launcher icon.
+            # This avoids adaptive-icon SDK 26 restrictions.
+            sed -i 's/@mipmap\/ic_launcher_round/@drawable\/ic_launcher_fallback/g' AndroidManifest.xml
+            sed -i 's/@mipmap\/ic_launcher/@drawable\/ic_launcher_fallback/g' AndroidManifest.xml
 
-            cat > "res/$dir/ic_launcher_round.xml" <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@drawable/ic_launcher_fallback"/>
-              <foreground android:drawable="@drawable/ic_launcher_fallback"/>
-          </adaptive-icon>
-          EOF
-          done
+            # Remove obsolete package attribute; namespace is already defined in build.gradle.
+            sed -i 's/ package="ir\.farshbazaar\.app"//' AndroidManifest.xml
 
+            echo "Launcher resource fix applied."
+            grep -n "android:icon\|android:roundIcon\|manifest" AndroidManifest.xml || true
       - name: Build Release APK
         working-directory: android
         run: |
