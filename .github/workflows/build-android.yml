@@ -32,7 +32,8 @@ jobs:
       - name: Build Android App Bundle (AAB) for Myket / Google Play
         run: |
           cd android
-          gradle bundleRelease --stacktrace || ./gradlew bundleRelease --stacktrace
+          ./gradlew bundleRelease --stacktrace
+          
 
       - name: Build Android APK for Direct Download / Bazaar / Myket
         run: |
