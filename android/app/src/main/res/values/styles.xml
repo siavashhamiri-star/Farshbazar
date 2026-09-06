@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.FarshBazaar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#800000</item>
+        <item name="colorPrimaryVariant">#4a0000</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="android:statusBarColor">#800000</item>
+        <item name="android:navigationBarColor">#2d221e</item>
+    </style>
+</resources>

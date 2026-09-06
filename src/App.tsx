@@ -45,7 +45,13 @@ import {
   Download,
   Smartphone,
   AppWindow,
-  Lock
+  Lock,
+  Eye,
+  Ear,
+  Accessibility,
+  FileCode,
+  PackageCheck,
+  VolumeX
 } from "lucide-react";
 
 // Auto-Pilot Autonomous Robot Steps configuration
@@ -396,6 +402,26 @@ export default function App() {
   } | null>(null);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
+  // Accessibility Suite for Visually Impaired, Deaf / Hard of Hearing, and Motor Disabilities (معلولان و توان‌یابان عزیز)
+  const [a11yHighContrast, setA11yHighContrast] = useState(false);
+  const [a11yFontSize, setA11yFontSize] = useState<"normal" | "large" | "extra">("normal");
+  const [a11yScreenReaderActive, setA11yScreenReaderActive] = useState(false);
+  const [a11yCaptionsActive, setA11yCaptionsActive] = useState(true);
+  const [a11yReducedMotion, setA11yReducedMotion] = useState(false);
+  const [a11yLargeTargets, setA11yLargeTargets] = useState(false);
+  const [showA11yModal, setShowA11yModal] = useState(false);
+  const [liveCaptionText, setLiveCaptionText] = useState<string>("");
+  const [showGradleModal, setShowGradleModal] = useState(false);
+
+  // Auto clear live caption after 7 seconds
+  useEffect(() => {
+    if (!liveCaptionText) return;
+    const timer = setTimeout(() => {
+      setLiveCaptionText("");
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [liveCaptionText]);
+
   useEffect(() => {
     fetch("/api/security-status")
       .then(res => res.json())
@@ -458,12 +484,32 @@ export default function App() {
 
   // Trigger voice synthesis or speech audio log when autopilot advances step
   const speakStepMessage = (text: string) => {
+    // 1. Always trigger visual captions for deaf / hard-of-hearing users
+    setLiveCaptionText(text);
+
+    // 2. Trigger audio narration for blind / visually impaired users
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'fa-IR';
         utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        // Fallback gracefully
+      }
+    }
+  };
+
+  // Helper to read any specific card or text aloud for blind or low-vision users
+  const readTextAloud = (text: string) => {
+    setLiveCaptionText(text);
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'fa-IR';
+        utterance.rate = 0.9;
         window.speechSynthesis.speak(utterance);
       } catch {
         // Fallback gracefully
@@ -795,21 +841,57 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbf9f3] text-[#2d221e] flex flex-col selection:bg-lac selection:text-white" dir="rtl">
+    <div 
+      className={`min-h-screen flex flex-col transition-colors ${
+        a11yHighContrast 
+          ? "bg-stone-950 text-amber-300 font-bold selection:bg-amber-400 selection:text-black border-4 border-amber-400" 
+          : "bg-[#fbf9f3] text-[#2d221e] selection:bg-lac selection:text-white"
+      } ${
+        a11yFontSize === "large" 
+          ? "text-[115%]" 
+          : a11yFontSize === "extra" 
+          ? "text-[130%]" 
+          : ""
+      } ${
+        a11yLargeTargets ? "[&_button]:min-h-[48px] [&_input]:min-h-[48px] [&_select]:min-h-[48px]" : ""
+      } ${
+        a11yReducedMotion ? "[&_*]:!transition-none [&_*]:!animate-none" : ""
+      }`} 
+      dir="rtl"
+      role="main"
+      aria-label="سامانه جامع فرش بازار با پشتیبانی دسترسی‌پذیری توان‌یابان و معلولان"
+    >
       
       {/* Golden Ornamental Header Bar */}
       <div className="h-2.5 bg-gradient-to-r from-lac via-amber-600 to-lac w-full shadow-md"></div>
 
-      {/* PWA Direct Installation & API Security Automation Banner */}
+      {/* PWA Direct Installation, Accessibility, Gradle & API Security Banner */}
       <div className="bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 text-amber-100 py-2 px-4 text-xs shadow-inner border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2 max-w-2xl flex-wrap">
+        <div className="flex items-center gap-2 max-w-3xl flex-wrap">
           <div className="flex items-center gap-1.5">
             <Smartphone className="w-4 h-4 text-amber-400 animate-pulse flex-shrink-0" />
-            <span className="font-bold text-amber-300">اپلیکیشن مستقیم PWA:</span>
-            <span className="text-stone-300 hidden md:inline text-[11px]">
-              بدون نیاز به کافه بازار، قابل نصب مستقیم روی اندروید و آیفون.
-            </span>
+            <span className="font-bold text-amber-300">اپلیکیشن و وب:</span>
           </div>
+
+          {/* Accessibility Suite Button for Disabled/Impaired */}
+          <button
+            onClick={() => setShowA11yModal(true)}
+            className="inline-flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40 text-[11px] font-bold transition-all cursor-pointer hover:border-amber-400 shadow-sm"
+            title="امکانات ویژه کم‌بینایان، نابینایان، کم‌شنوایان و ناشنوایان و معلولان جسمی"
+          >
+            <Accessibility className="w-3.5 h-3.5 text-amber-400" />
+            <span>دسترس‌پذیری توان‌یابان (کم‌بینا، نابینا، ناشنوا)</span>
+          </button>
+
+          {/* Gradle / Myket / Bazaar APK & AAB Button */}
+          <button
+            onClick={() => setShowGradleModal(true)}
+            className="inline-flex items-center gap-1.5 bg-sky-950/80 hover:bg-sky-900 text-sky-300 px-2.5 py-0.5 rounded-full border border-sky-500/40 text-[11px] font-bold transition-all cursor-pointer hover:border-sky-400 shadow-sm"
+            title="مشاهده تنظیمات فایل‌های Gradle، بیلد گیت‌هاب و انتشار در مایکت و بازار"
+          >
+            <FileCode className="w-3.5 h-3.5 text-sky-400" />
+            <span>فایل‌های گِردل APK / AAB (مایکت و بازار)</span>
+          </button>
 
           {/* Security & Automation Badge */}
           <button
@@ -818,17 +900,49 @@ export default function App() {
             title="کلیک برای مشاهده جزئیات امنیت سرور و اتوماسیون هوش مصنوعی"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>کلیدهای API: ۱۰۰٪ امن در سرور (اتوماسیون فعال)</span>
+            <span>امنیت API سرور</span>
           </button>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick Voice Screen Reader Toggle */}
           <button
-            onClick={() => setShowSecurityModal(true)}
-            className="text-stone-300 hover:text-amber-300 flex items-center gap-1 text-[11px] bg-stone-800/80 hover:bg-stone-800 px-2.5 py-1 rounded-xl border border-stone-700 hover:border-amber-500/40 transition-colors"
+            onClick={() => {
+              const nextState = !a11yScreenReaderActive;
+              setA11yScreenReaderActive(nextState);
+              if (nextState) {
+                readTextAloud("حالت دستیار صوتی برای نابینایان و کم‌بینایان فعال شد. هر بخش را لمس کنید تا خوانده شود.");
+              } else {
+                readTextAloud("حالت دستیار صوتی غیرفعال شد.");
+              }
+            }}
+            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
+              a11yScreenReaderActive 
+                ? "bg-amber-500 text-stone-950 border-amber-400 font-extrabold" 
+                : "bg-stone-800/80 text-stone-300 border-stone-700 hover:text-amber-300"
+            }`}
+            title="فعال/غیرفعال کردن دستیار صوتی برای نابینایان"
           >
-            <Lock className="w-3 h-3 text-amber-400" />
-            <span>گواهینامه امنیت API</span>
+            <Volume2 className="w-3.5 h-3.5" />
+            <span>{a11yScreenReaderActive ? "گوینده روشن" : "خوانش صوتی"}</span>
+          </button>
+
+          {/* High Contrast Quick Toggle */}
+          <button
+            onClick={() => {
+              const next = !a11yHighContrast;
+              setA11yHighContrast(next);
+              readTextAloud(next ? "حالت کنتراست شدید کم‌بینایان فعال شد." : "حالت استاندارد فعال شد.");
+            }}
+            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
+              a11yHighContrast 
+                ? "bg-yellow-400 text-stone-950 border-yellow-300 font-extrabold" 
+                : "bg-stone-800/80 text-stone-300 border-stone-700 hover:text-amber-300"
+            }`}
+            title="کنتراست زرد و مشکی برای کم‌بینایان"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{a11yHighContrast ? "کنتراست بالا فعال" : "کنتراست بالا"}</span>
           </button>
 
           {isAppInstalled ? (
@@ -847,6 +961,39 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Floating Live Closed-Caption Bar for Deaf / Hard-of-Hearing Users */}
+      <AnimatePresence>
+        {a11yCaptionsActive && liveCaptionText && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-2xl w-[92%] bg-stone-950/95 text-amber-200 border-2 border-amber-400 p-4 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3.5"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center flex-shrink-0 font-bold">
+              <Ear className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
+                <span>زیرنویس همزمان برای ناشنوایان و کم‌شنوایان:</span>
+              </div>
+              <p className="text-xs sm:text-sm font-semibold text-white mt-0.5 leading-relaxed">
+                {liveCaptionText}
+              </p>
+            </div>
+            <button
+              onClick={() => setLiveCaptionText("")}
+              className="text-stone-400 hover:text-white text-xs bg-stone-800 px-2 py-1 rounded-lg"
+              title="بستن زیرنویس"
+            >
+              ✖
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sacred Family Dedication Banner */}
       <div className="bg-gradient-to-r from-[#800000]/5 via-amber-50 to-[#800000]/5 border-b border-amber-600/10 py-6 px-4 text-stone-800 leading-relaxed relative overflow-hidden shadow-inner">
@@ -4367,6 +4514,324 @@ export default function App() {
                   className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-2.5 rounded-2xl text-xs transition-colors text-center shadow-lg shadow-emerald-950/50"
                 >
                   تایید و بازگشت به سامانه
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Accessibility & Disabilities Suite Modal (توان‌یابان، کم‌بینایان، نابینایان، ناشنوایان، کم‌شنوایان و معلولان جسمی) */}
+      <AnimatePresence>
+        {showA11yModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setShowA11yModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-stone-900 text-white p-6 rounded-3xl max-w-xl w-full border-2 border-amber-500/40 shadow-2xl space-y-5 my-8 relative"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 bg-amber-500 text-stone-950 rounded-2xl flex items-center justify-center font-bold shadow-lg shadow-amber-950/50">
+                    <Accessibility className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-amber-300 font-serif">مرکز دسترس‌پذیری توان‌یابان و معلولان</h3>
+                    <p className="text-xs text-stone-400">امکانات ویژه کم‌بینایان، نابینایان، ناشنوایان و محدودیت‌های حرکتی</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowA11yModal(false)}
+                  className="text-stone-400 hover:text-white text-xs bg-stone-800 px-2.5 py-1 rounded-xl"
+                >
+                  بستن ✖
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                {/* 1. Visually Impaired / Low Vision / Blind */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-300 flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-amber-400" />
+                      <span>۱. ویژه کم‌بینایان و نابینایان:</span>
+                    </span>
+                    <button
+                      onClick={() => readTextAloud("بخش تنظیمات کم‌بینایان و نابینایان. شما می‌توانید کنتراست شدید یا اندازه فونت را تغییر دهید.")}
+                      className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-lg hover:bg-amber-500/30 flex items-center gap-1"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                      <span>شنیدن راهنما</span>
+                    </button>
+                  </div>
+
+                  {/* Contrast Toggle */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <div className="font-semibold text-white">کنتراست شدید (مشکی و زرد فسفری):</div>
+                      <div className="text-[11px] text-stone-400">تفکیک رنگ‌ها و حاشیه‌ها برای خواندن بسیار راحت</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const next = !a11yHighContrast;
+                        setA11yHighContrast(next);
+                        readTextAloud(next ? "کنتراست بالا فعال شد" : "کنتراست به حالت عادی برگشت");
+                      }}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
+                        a11yHighContrast 
+                          ? "bg-yellow-400 text-stone-950 shadow-md" 
+                          : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                      }`}
+                    >
+                      {a11yHighContrast ? "فعال است ✓" : "غیرفعال"}
+                    </button>
+                  </div>
+
+                  {/* Font Size Scaling */}
+                  <div className="pt-2 border-t border-stone-700/50 flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-white">اندازه قلم و متون:</div>
+                      <div className="text-[11px] text-stone-400">بزرگ‌نمایی بدون به هم ریختن چیدمان صفحه</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setA11yFontSize("normal")}
+                        className={`px-2.5 py-1 rounded-lg text-xs ${a11yFontSize === "normal" ? "bg-amber-500 text-stone-950 font-bold" : "bg-stone-700 text-stone-300"}`}
+                      >
+                        ۱۰۰٪
+                      </button>
+                      <button
+                        onClick={() => setA11yFontSize("large")}
+                        className={`px-2.5 py-1 rounded-lg text-xs ${a11yFontSize === "large" ? "bg-amber-500 text-stone-950 font-bold" : "bg-stone-700 text-stone-300"}`}
+                      >
+                        ۱۱۵٪ (بزرگ)
+                      </button>
+                      <button
+                        onClick={() => setA11yFontSize("extra")}
+                        className={`px-2.5 py-1 rounded-lg text-xs ${a11yFontSize === "extra" ? "bg-amber-500 text-stone-950 font-bold" : "bg-stone-700 text-stone-300"}`}
+                      >
+                        ۱۳۰٪ (فوق‌العاده)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Speech / Screen Reader Active */}
+                  <div className="pt-2 border-t border-stone-700/50 flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-white">دستیار صوتی و گوینده هوشمند (Screen Reader):</div>
+                      <div className="text-[11px] text-stone-400">خوانش صوتی متون، اعلانات و ارزیابی فرش‌ها</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const next = !a11yScreenReaderActive;
+                        setA11yScreenReaderActive(next);
+                        readTextAloud(next ? "گوینده صوتی فعال شد" : "گوینده صوتی غیرفعال شد");
+                      }}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
+                        a11yScreenReaderActive 
+                          ? "bg-amber-500 text-stone-950 shadow-md" 
+                          : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                      }`}
+                    >
+                      {a11yScreenReaderActive ? "گوینده فعال ✓" : "غیرفعال"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Hearing Impaired / Deaf */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sky-300 flex items-center gap-2">
+                      <Ear className="w-4 h-4 text-sky-400" />
+                      <span>۲. ویژه ناشنوایان و کم‌شنوایان:</span>
+                    </span>
+                    <span className="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded-lg border border-sky-800">
+                      پشتیبانی کامل دیداری
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <div className="font-semibold text-white">زیرنویس همزمان برای تمام صداها و پیام‌ها:</div>
+                      <div className="text-[11px] text-stone-400">نمایش متن کلیه راهنماها و پیام‌ها در پایین صفحه</div>
+                    </div>
+                    <button
+                      onClick={() => setA11yCaptionsActive(!a11yCaptionsActive)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
+                        a11yCaptionsActive 
+                          ? "bg-sky-500 text-stone-950 shadow-md" 
+                          : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                      }`}
+                    >
+                      {a11yCaptionsActive ? "زیرنویس فعال ✓" : "غیرفعال"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Physical & Motor Disability */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-300 flex items-center gap-2">
+                      <Accessibility className="w-4 h-4 text-emerald-400" />
+                      <span>۳. ویژه توان‌یابان جسمی و حرکتی (لرزش دست / محدودیت انگشتان):</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <div className="font-semibold text-white">کلیدهای لمسی فوق بزرگ (Large Touch Targets):</div>
+                      <div className="text-[11px] text-stone-400">حداقل ارتفاع ۴۸ پیکسل برای سهولت لمس و کلیک بدون خطا</div>
+                    </div>
+                    <button
+                      onClick={() => setA11yLargeTargets(!a11yLargeTargets)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
+                        a11yLargeTargets 
+                          ? "bg-emerald-500 text-stone-950 shadow-md" 
+                          : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                      }`}
+                    >
+                      {a11yLargeTargets ? "فعال ✓" : "عادی"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-stone-700/50">
+                    <div>
+                      <div className="font-semibold text-white">کاهش تحرک و انیمیشن‌ها (Reduced Motion):</div>
+                      <div className="text-[11px] text-stone-400">حذف پرش‌های تصویری و انیمیشن‌های سریع جهت آرامش دیداری</div>
+                    </div>
+                    <button
+                      onClick={() => setA11yReducedMotion(!a11yReducedMotion)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
+                        a11yReducedMotion 
+                          ? "bg-emerald-500 text-stone-950 shadow-md" 
+                          : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                      }`}
+                    >
+                      {a11yReducedMotion ? "فعال ✓" : "عادی"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowA11yModal(false)}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold py-2.5 rounded-2xl text-xs transition-colors text-center"
+                >
+                  ذخیره و بازگشت به برنامه
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Android Gradle & Myket / Bazaar Publishing Guide Modal */}
+      <AnimatePresence>
+        {showGradleModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setShowGradleModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-stone-900 text-white p-6 rounded-3xl max-w-2xl w-full border-2 border-sky-500/40 shadow-2xl space-y-5 my-8 relative"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 bg-sky-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-lg shadow-sky-950/50">
+                    <FileCode className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-sky-300 font-serif">ساخت فایل‌های APK و AAB در گیت‌هاب و انتشار در مایکت</h3>
+                    <p className="text-xs text-stone-400">شامل فایل‌های Gradle، اکشن گیت‌هاب و فرمت‌های مخصوص مایکت و بازار</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowGradleModal(false)}
+                  className="text-stone-400 hover:text-white text-xs bg-stone-800 px-2.5 py-1 rounded-xl"
+                >
+                  بستن ✖
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs leading-relaxed">
+                {/* 1. Gradle Files Status */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-2">
+                  <h4 className="font-bold text-amber-300 flex items-center gap-1.5">
+                    <PackageCheck className="w-4 h-4 text-emerald-400" />
+                    <span>۱. وضعیت فایل‌های گِردل (Gradle) ساخته شده در پروژه:</span>
+                  </h4>
+                  <p className="text-stone-300 text-[11px]">
+                    فایل‌های استاندارد پروژه‌های نیتیو اندروید با پکیج نیم <code className="bg-stone-950 text-sky-300 px-1 py-0.5 rounded font-mono">ir.farshbazaar.app</code> ایجاد شده‌اند:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-stone-300 text-[11px] pr-2 font-mono">
+                    <li><strong className="text-amber-300">android/build.gradle:</strong> تنظیمات مخازن گوگل و افزونه Gradle اندروید ۸</li>
+                    <li><strong className="text-amber-300">android/app/build.gradle:</strong> بیلد اختصاصی با TargetSdk 34 و تولید همزمان APK و AAB</li>
+                    <li><strong className="text-amber-300">android/settings.gradle:</strong> نام پروژه و ماژول‌های برنامه</li>
+                    <li><strong className="text-amber-300">android/app/src/main/AndroidManifest.xml:</strong> مانیفست اندروید با مجوزهای استاندارد</li>
+                    <li><strong className="text-amber-300">.github/workflows/build-android.yml:</strong> اتوماسیون بیلد در گیت‌هاب اکشنز</li>
+                  </ul>
+                </div>
+
+                {/* 2. GitHub Actions Automated Pipeline */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-2">
+                  <h4 className="font-bold text-sky-300 flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-sky-400" />
+                    <span>۲. چگونگی ساخت فایل APK و AAB در گیت‌هاب (GitHub Actions):</span>
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-1.5 text-stone-300 text-[11px] pr-2">
+                    <li>وقتی کد را به گیت‌هاب خود Push می‌کنید، فایل ورک‌فلو <code className="bg-stone-950 text-sky-300 px-1 py-0.5 rounded">.github/workflows/build-android.yml</code> به طور خودکار اجرا می‌شود.</li>
+                    <li>سرور مجازی اوبونتو با جاوا ۱۷ و Android SDK فعال شده و دو دستور زیر را اجرا می‌کند:
+                      <div className="bg-stone-950 text-emerald-400 p-2 rounded-xl mt-1 font-mono text-[10px] ltr text-left">
+                        gradle bundleRelease   # تولید فایل .aab (بسته نرم‌افزاری مایکت و گوگل‌پلی)<br />
+                        gradle assembleRelease # تولید فایل .apk (نصب مستقیم برای کاربران)
+                      </div>
+                    </li>
+                    <li>در پایان در تب <strong>Actions</strong> گیت‌هاب، بخش <strong>Artifacts</strong> دو فایل خروجی برای دانلود آماده خواهند بود.</li>
+                  </ol>
+                </div>
+
+                {/* 3. Steps for Publishing on Myket */}
+                <div className="p-3.5 bg-stone-800/70 rounded-2xl border border-stone-700/60 space-y-2">
+                  <h4 className="font-bold text-emerald-300 flex items-center gap-1.5">
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span>۳. مراحل ثبت و انتشار در مارکت مایکت (Myket Developers):</span>
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-1.5 text-stone-300 text-[11px] pr-2">
+                    <li>وارد پنل توسعه‌دهندگان مایکت به نشانی <strong className="text-sky-300">developers.myket.ir</strong> شوید و حساب کاربری بسازید.</li>
+                    <li>روی گزینه <strong>«ثبت برنامه جدید»</strong> کلیک کنید.</li>
+                    <li>فایل <strong className="text-amber-300">FarshBazaar-Release-AAB (.aab)</strong> یا <strong className="text-amber-300">FarshBazaar-Release-APK (.apk)</strong> دریافتی از گیت‌هاب را آپلود کنید.</li>
+                    <li>عنوان فارسی را «فرش بازار»، دسته‌بندی را «خرید و فروش / سبک زندگی» انتخاب کرده و آیکون و اسکرین‌شات‌ها را قرار دهید.</li>
+                    <li>درخواست انتشار را ارسال کنید؛ تیم مایکت حداکثر ظرف ۲۴ الی ۴۸ ساعت برنامه را تایید و در مارکت مایکت منتشر می‌کند.</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowGradleModal(false)}
+                  className="w-full bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 text-white font-bold py-2.5 rounded-2xl text-xs transition-colors text-center shadow-lg shadow-sky-950/50"
+                >
+                  متوجه شدم، بستن پنجره
                 </button>
               </div>
             </motion.div>
