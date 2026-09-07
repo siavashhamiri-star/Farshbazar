@@ -2,29 +2,30 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ir.farshbazaar.app">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="${launcherName}"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_launcher_round"
         android:supportsRtl="true"
+        android:hardwareAccelerated="true"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.FarshBazaar">
 
-        <meta-data
-            android:name="asset_statements"
-            android:value="${assetStatements}" />
-
+        <!-- Native WebView Primary Activity -->
         <activity
-            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:name="ir.farshbazaar.app.MainActivity"
             android:exported="true"
-            android:label="${launcherName}">
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="${defaultUrl}" />
+            android:label="@string/app_name"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,8 +37,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:host="${hostName}"
-                    android:scheme="https" />
+                    android:scheme="https"
+                    android:host="ais-dev-gsxhu7jnqctxlekjscdtx6-453570687245.europe-west2.run.app" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="ais-pre-gsxhu7jnqctxlekjscdtx6-453570687245.europe-west2.run.app" />
             </intent-filter>
         </activity>
     </application>

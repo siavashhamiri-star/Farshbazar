@@ -41,16 +41,21 @@ app.get("/api/security-status", (req, res) => {
     status: "secure",
     serverSideOnly: true,
     geminiConfigured: isKeyActive,
-    model: "gemini-3.8-flash",
+    primaryModel: "gemini-3.8-flash",
+    fallbackModel: "gemini-2.5-flash",
     autoPilotReady: true,
     protectionLevel: "حداکثر امنیت سرور (Server-Side Isolated Vault)",
     message: isKeyActive
-      ? "کلید API در سرور پشتیبانی شده و هیچ‌گونه افشا یا دسترسی از سمت مرورگر کاربر وجود ندارد."
-      : "اتوماسیون سرور فعال است؛ موتور هوشمند پشتیبان بازار آماده بوده و کلید به صورت خودکار از محیط سرور ابری فراخوانی می‌شود."
+      ? "کلید API در سرور با الگوریتم‌های چندمدلی ایزوله شده و هیچ‌گونه دسترسی از سمت مرورگر وجود ندارد."
+      : "اتوماسیون هوشمند فعال است؛ موتور دانش‌بنیان بازار کهن آماده بوده و اتصال کلیدها خودکار مدیریت می‌شود."
   });
 });
 
-// Domain-knowledge helper for automated fallback when API key is pending or offline
+app.get("/api/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
+// Domain-knowledge helper for automated fallback when API key is pending, quota is exceeded, or offline
 function generateAutonomousAppraisal(params: {
   origin: string;
   raj?: string;
@@ -105,7 +110,7 @@ function generateAutonomousAppraisal(params: {
   };
 }
 
-// Primary Endpoint: Traditional Carpet Appraisal and Storytelling by Daei Mehdi & other selected experts
+// Primary Endpoint: Traditional Carpet Appraisal and Storytelling with Multi-Model Fallback
 app.post("/api/expert-advice", async (req, res) => {
   try {
     const { origin, raj, material, design, length, width, age, userNotes, expertType } = req.body;
@@ -155,58 +160,71 @@ app.post("/api/expert-advice", async (req, res) => {
       توجه: ساختار خروجی حتماً باید یک آبجکت معتبر JSON طبق مشخصات خواسته شده باشد.
     `;
 
-    // Request JSON schema from modern gemini-3.8-flash model
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          required: ["expertAppraisal", "story", "technicalSpecs", "valuation", "maintenanceTips"],
-          properties: {
-            expertAppraisal: {
-              type: Type.STRING,
-              description: "Expert opinion and commentary in customized tone."
-            },
-            story: {
-              type: Type.STRING,
-              description: "Poetic and traditional storytelling about the rug's design and weavers' emotions."
-            },
-            technicalSpecs: {
-              type: Type.OBJECT,
-              required: ["knotDensity", "rajClass", "rarity"],
-              properties: {
-                knotDensity: { type: Type.STRING, description: "Estimated knots per square meter." },
-                rajClass: { type: Type.STRING, description: "Description of raj quality and weave grade." },
-                rarity: { type: Type.STRING, description: "Market rarity scale." }
-              }
-            },
-            valuation: {
-              type: Type.OBJECT,
-              required: ["rangeTomans", "rangeGoldSovereigns", "justification"],
-              properties: {
-                rangeTomans: { type: Type.STRING, description: "Estimated value range in Iranian Tomans." },
-                rangeGoldSovereigns: { type: Type.STRING, description: "Equivalent value in Gold Sovereigns." },
-                justification: { type: Type.STRING, description: "Craftsmanship reason for this value." }
-              }
-            },
-            maintenanceTips: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "3-4 custom care or decoration tips."
+    const schemaConfig = {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        required: ["expertAppraisal", "story", "technicalSpecs", "valuation", "maintenanceTips"],
+        properties: {
+          expertAppraisal: { type: Type.STRING, description: "Expert opinion and commentary in customized tone." },
+          story: { type: Type.STRING, description: "Poetic storytelling about the rug." },
+          technicalSpecs: {
+            type: Type.OBJECT,
+            required: ["knotDensity", "rajClass", "rarity"],
+            properties: {
+              knotDensity: { type: Type.STRING },
+              rajClass: { type: Type.STRING },
+              rarity: { type: Type.STRING }
             }
+          },
+          valuation: {
+            type: Type.OBJECT,
+            required: ["rangeTomans", "rangeGoldSovereigns", "justification"],
+            properties: {
+              rangeTomans: { type: Type.STRING },
+              rangeGoldSovereigns: { type: Type.STRING },
+              justification: { type: Type.STRING }
+            }
+          },
+          maintenanceTips: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
           }
         }
       }
-    });
+    };
 
-    const responseText = response.text || "{}";
-    const appraisalResult = JSON.parse(responseText.trim());
+    let responseText = "";
+
+    // Automated Multi-Model Resilience: Try gemini-3.8-flash first, then gemini-2.5-flash
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: prompt,
+        config: schemaConfig
+      });
+      responseText = response.text || "";
+    } catch (primaryError: any) {
+      console.warn("Primary model throttled/quota hit, attempting gemini-2.5-flash fallback:", primaryError.message);
+      try {
+        const response2 = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+          config: schemaConfig
+        });
+        responseText = response2.text || "";
+      } catch (secondaryError: any) {
+        console.warn("Both models throttled, engaging autonomous knowledge engine:", secondaryError.message);
+        const fallback = generateAutonomousAppraisal(req.body);
+        return res.json(fallback);
+      }
+    }
+
+    const appraisalResult = JSON.parse(responseText.trim() || "{}");
     res.json(appraisalResult);
 
   } catch (error: any) {
-    console.warn("Gemini call fell back to autonomous expert engine:", error.message);
+    console.warn("Appraisal engaged autonomous fallback:", error.message);
     const fallback = generateAutonomousAppraisal(req.body);
     res.json(fallback);
   }
@@ -223,7 +241,6 @@ app.post("/api/translate", async (req, res) => {
     const ai = getGeminiClient();
 
     if (!ai) {
-      // Graceful domain translation fallback
       return res.json({
         translatedText: `[Persian Carpet Trade Dispatch]: Handcrafted authentic carpet documentation: "${text}". Master craftsmanship with natural dye and symmetrical weave knots.`
       });
@@ -234,30 +251,39 @@ app.post("/api/translate", async (req, res) => {
       prompt = `
         شما یک مترجم نخبه، ادیب و کارشناس تراز اول فرش‌های دستباف صادراتی ایران هستید.
         شما وظیفه دارید متن مرتبط با فرش، مشخصات بافت، ابعاد یا مذاکره تجاری را به زبان "${targetLang || 'انگلیسی'}" ترجمه و بومی‌سازی هنری (Hand-Knotted Translation) کنید.
-        ترجمه شما نباید یک ترجمه ماشینی ساده باشد، بلکه باید سرشار از واژگان اصیل هنری، تخصصی، شیک و متناسب با فرهنگ زبان مقصد باشد که گویی توسط یک استاد گره‌باف دوزبانه با عشق و ظرافت بافته شده است تا مخاطب خارجی شیفته جلال هنر فرش ایرانی شود.
-        
         متن مبدا:
         "${text}"
-
         ترجمه هنری و بومی‌سازی شده نهایی را مستقیماً بدون هیچ توضیح اضافی برگردانید.
       `;
     } else {
       prompt = `
         شما مترجم هوشمند و تخصصی بازار جهانی فرش ایران هستید.
-        وظیفه شما ترجمه روان، تجاری، زیبا و اصیل این متن مرتبط با فرش، مشخصات بافت، ابعاد یا مذاکره تجاری به زبان "${targetLang || 'انگلیسی'}" است:
-        
+        متن زیر را به زبان "${targetLang || 'انگلیسی'}" ترجمه روان و تجاری کنید:
         "${text}"
-
         ترجمه نهایی را به صورت مستقیم و بدون توضیحات اضافی برگردانید.
       `;
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: prompt
-    });
+    let translatedText = "";
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: prompt
+      });
+      translatedText = response.text?.trim() || "";
+    } catch {
+      try {
+        const response2 = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt
+        });
+        translatedText = response2.text?.trim() || "";
+      } catch {
+        translatedText = `[Autonomous Carpet Export Translation]: ${text}`;
+      }
+    }
 
-    res.json({ translatedText: response.text?.trim() || "" });
+    res.json({ translatedText });
   } catch (error: any) {
     console.warn("Translation fallback engaged:", error.message);
     res.json({

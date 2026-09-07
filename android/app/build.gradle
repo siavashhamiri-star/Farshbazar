@@ -14,19 +14,16 @@ android {
         versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders = [
-            hostName: "ais-dev-gsxhu7jnqctxlekjscdtx6-453570687245.europe-west2.run.app",
-            defaultUrl: "https://ais-dev-gsxhu7jnqctxlekjscdtx6-453570687245.europe-west2.run.app",
-            launcherName: "فرش بازار",
-            assetStatements: '[{ "relation": ["delegate_permission/common.handle_all_urls"], "target": { "namespace": "web", "site": "https://ais-dev-gsxhu7jnqctxlekjscdtx6-453570687245.europe-west2.run.app" }}]'
-        ]
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // For CI/CD and direct testing without keystore, fallback to debug signing or custom signing
+            // Sign release APK with debug keystore automatically so it installs directly on phones
+            signingConfig signingConfigs.debug
+        }
+        debug {
             signingConfig signingConfigs.debug
         }
     }
@@ -40,6 +37,6 @@ android {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.browser:browser:1.8.0'
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'androidx.webkit:webkit:1.10.0'
 }
