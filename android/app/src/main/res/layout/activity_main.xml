@@ -115,6 +115,18 @@
             android:text="تلاش مجدد (بارگذاری دوباره)"
             android:textColor="#ffffff"
             android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnOpenBrowser"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#0284c7"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:text="باز کردن در مرورگر گوشی (Chrome/Samsung)"
+            android:textColor="#ffffff"
+            android:textSize="12sp" />
     </LinearLayout>
 
 </RelativeLayout>

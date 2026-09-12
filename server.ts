@@ -9,6 +9,17 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// Enable CORS for mobile WebViews, PWA, and external browsers
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 const PORT = 3000;
 
 // Lazy Initialization of Gemini Client (ensures safe server startup without crashing if key is pending)

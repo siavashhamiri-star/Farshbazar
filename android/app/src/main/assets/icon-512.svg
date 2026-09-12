@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#800000"/>
+      <stop offset="100%" stop-color="#4a0000"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="90" fill="none" stroke="url(#gold)" stroke-width="6" stroke-dasharray="16,8" opacity="0.6"/>
+  <rect x="40" y="40" width="432" height="432" rx="76" fill="none" stroke="url(#gold)" stroke-width="3" opacity="0.8"/>
+  <g transform="translate(256, 256)">
+    <path d="M0 -140 L35 -80 L100 -100 L70 -35 L140 0 L70 35 L100 100 L35 80 L0 140 L-35 80 L-100 100 L-70 35 L-140 0 L-70 -35 L-100 -100 L-35 -80 Z" fill="url(#gold)" opacity="0.2"/>
+    <path d="M0 -110 L25 -60 L80 -80 L55 -25 L110 0 L55 25 L80 80 L25 60 L0 110 L-25 60 L-80 80 L-55 25 L-110 0 L-55 -25 L-80 -80 L-25 -60 Z" fill="none" stroke="url(#gold)" stroke-width="4"/>
+    <ellipse cx="0" cy="0" rx="65" ry="85" fill="url(#bg)" stroke="url(#gold)" stroke-width="6"/>
+    <ellipse cx="0" cy="0" rx="45" ry="60" fill="url(#gold)" opacity="0.9"/>
+    <circle cx="0" cy="0" r="22" fill="#800000"/>
+    <circle cx="0" cy="0" r="10" fill="url(#gold)"/>
+    <path d="M0 -85 L-15 -125 L0 -145 L15 -125 Z" fill="url(#gold)"/>
+    <path d="M0 85 L-15 125 L0 145 L15 125 Z" fill="url(#gold)"/>
+  </g>
+</svg>

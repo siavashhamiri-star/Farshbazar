@@ -14,6 +14,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies and Build Web Assets
+        run: |
+          npm ci || npm install
+          npm run build
+          mkdir -p android/app/src/main/assets
+          cp -r dist/* android/app/src/main/assets/
+          rm -f android/app/src/main/assets/server.cjs* || true
+
       - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
